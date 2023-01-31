@@ -1,69 +1,32 @@
-import { useState, useEffect } from "react";
+import { useState, useContext } from "react";
 import RestaurantCard from "./RestaurantCard";
-import Shimmer from "./Shimmer";
-import { FETCH_RESTAURANT_URL } from "../constants";
 import { Link } from "react-router-dom";
+import Shimmer from "./Shimmer";
+import { filterRestaurant } from "../utils/helper";
+import useRestaurant from "../utils/useRestaurant";
+import UserContext from "../utils/UserContext";
+import useOnline from "../utils/useOnline";
 
 const Body = () => {
-  const [restaurantsList, setRestaurantsList] = useState(null);
-  const [filteredRestaurantList, setFilteredRestaurantList] = useState([]);
+  let { user } = useContext(UserContext);
   const [searchText, setSearchText] = useState("");
+  const [filteredRestaurantList, setFilteredRestaurantList] = useRestaurant();
+  const isOnline = useOnline();
 
-  useEffect(() => {
-    (async () => {
-      const res = await fetchRestaurantsList();
-      console.log(res);
-      setRestaurantsList(res?.data?.cards[2]?.data?.data?.cards);
-      setFilteredRestaurantList(res?.data?.cards[2]?.data?.data?.cards);
-    })();
-  }, []);
-
-  const fetchRestaurantsList2 = async () => {
-    const data = await fetch(FETCH_RESTAURANT_URL);
-    const json = data.json();
-    console.log(typeof json, json);
-    return json;
-  };
-
-  const fetchRestaurantsList = async () => {
-    return await fetch(FETCH_RESTAURANT_URL)
-      .then((res) => {
-        const data = res.json();
-        console.log(typeof data, data);
-        return data;
-      })
-      .then((res) => {
-        // console.log(res?.data?.cards[2]?.data?.data?.cards);
-        // return (res?.data?.cards[2]?.data?.data?.cards);
-        console.log(res?.data?.cards[2]?.data?.data?.cards);
-
-        return res;
-      })
-      .catch((err) => {
-        console.log(err.message);
-      });
-    // return result
-  };
-
-  const filterRestaurant = (searchText, restaurantsList) => {
-    const filteredRes = restaurantsList.filter((item) => {
-      console.log(item.data?.name, searchText);
-      return item?.data?.name.toLowerCase().includes(searchText.toLowerCase());
-    });
-    console.log(filteredRes);
-    return filteredRes;
-  };
+  if (!isOnline)
+    return (
+      <>
+        <h1>OOps Network error</h1>
+      </>
+    );
 
   return filteredRestaurantList?.length === 0 ? (
     <div className="body">
-      {Array(12)
-        .fill("0")
-        .map((item) => (
-          <Shimmer />
-        ))}
+      <Shimmer />
     </div>
   ) : (
     <div className="body">
+      <h1>{isOnline ? "✅" : "🔴"}</h1>
       <div>
         <input
           type="text"
@@ -81,8 +44,16 @@ const Body = () => {
         >
           Search
         </button>
+        <input
+          type="text"
+          placeholder="user name"
+          value="kumar"
+          onChange={(e) => {
+            user = e.target.value;
+          }}
+        />
       </div>
-      {filteredRestaurantList.map((restaurant) => {
+      {filteredRestaurantList?.map((restaurant) => {
         return (
           <Link
             to={`/restaurant/${restaurant?.data.id}`}
